@@ -1,0 +1,653 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+    <title>Tetris</title>
+
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8"/>
+    <meta http-equiv="cache-control" content="no-cache">
+    <link rel="icon" href="https://avatars2.githubusercontent.com/u/11897865?v=3&s=466" type="image/x-icon"/>
+
+    <style type="text/css">
+        #smallScreen {
+            display: none;
+        }
+
+        #screen {
+            background-color: #aaa;
+            padding: 5px;
+        }
+        #screenTable {
+            margin:auto;
+        }
+    </style>
+
+</head>
+
+<body>
+<div id="game" align="center">
+    <h1>Tetris</h1>
+    <table>
+        <tr>
+            <td colspan="3">
+                <fieldset>
+                    <legend>Control Panel</legend>
+                    ↑ changes directory, ↓ moves down, ← moves left, → move right, space ground.
+                    <table>
+                        <tr>
+                            <td>
+                                Time:
+                            </td>
+                            <td>
+                                <span id="runTime">00:00</span>
+                            </td>
+                            <td>
+                                <div id="smallScreen"></div>
+                            </td>
+                            <td>
+                                <input id='btnstart' type='button' value='Start' onclick="start()"/>
+                            </td>
+                            <td>
+                                <input id='btnpause' type='button' value='Pause' disabled="disabled" onclick='pause()'/>
+                            </td>
+                            <td>
+                                <input id='btnend' type='button' value='End' disabled="disabled" onclick='end()'/>
+                            </td>
+                        </tr>
+                    </table>
+                </fieldset>
+            </td>
+        </tr>
+        <tr>
+            <td colspan="3">
+                <fieldset>
+                    <legend>Game Board</legend>
+                    <div id="screen"></div>
+                </fieldset>
+            </td>
+        </tr>
+
+    </table>
+
+
+</div>
+<script type="text/javascript">
+    var COLUMN = 10; //显示屏幕的宽度(相对列数)
+    var ROW = 24; //显示屏幕的高度(相对行数)
+
+    //定义方块数据数组，存储所有的方块数据
+    var TETROMINO_DATA = [
+        //Shape"I"
+        [
+            [
+                [0, 0, 0, 0],
+                [1, 1, 1, 1],
+                [0, 0, 0, 0],
+                [0, 0, 0, 0]
+            ],
+            [
+                [0, 1, 0, 0],
+                [0, 1, 0, 0],
+                [0, 1, 0, 0],
+                [0, 1, 0, 0]
+            ]
+        ],
+        //Shape "L"
+        [
+            [
+                [1, 1, 1, 0],
+                [1, 0, 0, 0],
+                [0, 0, 0, 0],
+                [0, 0, 0, 0]
+            ],
+            [
+                [1, 1, 0, 0],
+                [0, 1, 0, 0],
+                [0, 1, 0, 0],
+                [0, 0, 0, 0]
+            ],
+            [
+                [0, 0, 1, 0],
+                [1, 1, 1, 0],
+                [0, 0, 0, 0],
+                [0, 0, 0, 0]
+            ],
+            [
+                [1, 1, 0, 0],
+                [0, 1, 0, 0],
+                [0, 1, 0, 0],
+                [0, 0, 0, 0]
+            ]
+        ],
+        //Shape "T"
+        [
+            [
+                [0, 0, 0, 0],
+                [1, 1, 1, 0],
+                [0, 1, 0, 0],
+                [0, 0, 0, 0]
+            ],
+            [
+                [0, 1, 0, 0],
+                [1, 1, 0, 0],
+                [0, 1, 0, 0],
+                [0, 0, 0, 0]
+            ],
+            [
+                [0, 1, 0, 0],
+                [1, 1, 1, 0],
+                [0, 0, 0, 0],
+                [0, 0, 0, 0]
+            ],
+            [
+                [0, 1, 0, 0],
+                [0, 1, 1, 0],
+                [0, 1, 0, 0],
+                [0, 0, 0, 0]
+            ]
+        ],
+        //Shape "~L"
+        [
+            [
+                [0, 0, 0, 0],
+                [1, 1, 1, 0],
+                [0, 0, 1, 0],
+                [0, 0, 0, 0]
+            ],
+            [
+                [0, 1, 0, 0],
+                [0, 1, 0, 0],
+                [1, 1, 0, 0],
+                [0, 0, 0, 0]
+            ],
+            [
+                [1, 0, 0, 0],
+                [1, 1, 1, 0],
+                [0, 0, 0, 0],
+                [0, 0, 0, 0]
+            ],
+            [
+                [0, 1, 1, 0],
+                [0, 1, 0, 0],
+                [0, 1, 0, 0],
+                [0, 0, 0, 0]
+            ]
+        ],
+        //Shape "~S"
+        [
+            [
+                [0, 0, 0, 0],
+                [1, 1, 0, 0],
+                [0, 1, 1, 0],
+                [0, 0, 0, 0]
+            ],
+            [
+                [0, 0, 1, 0],
+                [0, 1, 1, 0],
+                [0, 1, 0, 0],
+                [0, 0, 0, 0]
+            ]
+        ],
+        //Shape "S"
+        [
+            [
+                [0, 1, 0, 0],
+                [0, 1, 1, 0],
+                [0, 0, 1, 0],
+                [0, 0, 0, 0]
+            ],
+            [
+                [0, 0, 0, 0],
+                [0, 1, 1, 0],
+                [1, 1, 0, 0],
+                [0, 0, 0, 0]
+            ]
+        ],
+        //Shape "O"
+        [
+            [
+                [0, 0, 0, 0],
+                [0, 1, 1, 0],
+                [0, 1, 1, 0],
+                [0, 0, 0, 0]
+            ]
+        ]
+    ];
+    var DEFAULT_TETROMINO_COLOR = "GRAY"; //生成方块的默认颜色
+    var DEFAULT_BLOCK_X = COLUMN/2-2; //方块出现时左上角默认位置的X坐标
+
+    var bottom = []; //底部方块堆（实际是与屏幕大小相同的二维数组）
+    var bottomColor = []; //底部方块堆中各块的颜色
+
+    var runTime; //运行时间，单位秒
+    var block; //显示屏幕中的方块
+
+    var block_x; //方块出现时左上角的X坐标
+    var block_y; //方块出现时左上角的y坐标
+
+    var gameStatus; //游戏状态（offDuty|run|pause|end）
+
+    var taskTimer = function () {
+    }; //计时器，用于循环执行方块下落等事件
+    var updateTimer = function () {
+    }; //计时器，游戏运行时用于更新游戏运行时间
+
+    //定义方块对象的构造方法
+    function Tetromino(color, index, status) {
+        this.color = color; //方块的颜色
+        this.index = index;
+        this.status = status;
+        this.data = TETROMINO_DATA[index][status];
+    }
+    ;
+    //获取当前方块的高度
+    Tetromino.prototype.getHeight = function () {
+        for (var i = 3; i >= 0; i--) {
+            for (j = 0; j < 4; j++) {
+                if (this.data[i][j] == 1) {
+                    return i + 1;
+                }
+            }
+        }
+    };
+    //获取方块对象的下一个状态
+    Tetromino.prototype.getNextStatus = function () {
+        this.status++;
+        this.status %= TETROMINO_DATA[this.index].length;
+        return TETROMINO_DATA[this.index][this.status];
+    };
+
+    //定义屏幕显示的方块
+    function Block(x, y, tetromino) {
+        this.x = x; //方块所在4×4矩形的左上角x坐标
+        this.y = y; //方块所在4×4矩形的左上角y坐标
+        this.tetromino = tetromino; //方块
+    }
+
+    //方块工厂，用于生成各种方块
+    var TetrominoFactory = {
+        tetromino: [], //方块属性
+        createTetromino: function () { //生成一个新的方块
+            var color = DEFAULT_TETROMINO_COLOR; //使用默认颜色初始化
+            var index = Math.floor(Math.random() * TETROMINO_DATA.length);
+            var status = Math.floor(Math.random() * TETROMINO_DATA[index].length);
+            this.tetromino = new Tetromino(color, index, status);
+            return this.getCurrentTetromino();
+        },
+        getCurrentTetromino: function () { //返回当前的方块
+            return this.tetromino;
+        }
+    };
+
+    //初始化整个页面
+    function initBody() {
+        initButtonStatus();
+
+        //初始化全局变量
+        runTime = 0;
+
+        block_x = DEFAULT_BLOCK_X;
+        block_y = 0;
+
+        gameStatus = "offDuty";
+
+
+        initScreen();
+        initSmallScreen();
+
+        //初始化底部方块堆及堆中各块的颜色
+        for (var i = 0; i < ROW; i++) {
+            bottom[i] = [];
+            bottomColor[i] = [];
+            for (var j = 0; j < COLUMN; j++) {
+                bottom[i][j] = 0;
+                bottomColor[i][j] = "BLACK";
+            }
+        }
+
+        TetrominoFactory.createTetromino();
+    }
+
+    //初始化显示屏幕
+    function initScreen() {
+        var classStyle = "thinBorderTable";
+        //拼接显示屏幕的HTML代码
+        var screenHtml = "<table id='screenTable' class='" + classStyle + "'>";
+        for (var i = 0; i < ROW; i++) {
+            screenHtml += "<tr height='20'>";
+            for (var j = 0; j < COLUMN; j++) {
+                screenHtml += "<td width='20'></td>";
+            }
+            screenHtml += "</tr>";
+        }
+        screenHtml += "</table>";
+        document.getElementById("screen").innerHTML = screenHtml;
+    }
+
+    //初始化小显示屏幕
+    function initSmallScreen() {
+        //拼接小显示屏幕（用于显示下一个落下的方块）的HTML代码
+        var smallScreenHtml = "<table class='thinBorderTable'>";
+        for (var i = 0; i < 4; i++) {
+            smallScreenHtml += "<tr height='15'>";
+            for (var j = 0; j < 4; j++) {
+                smallScreenHtml += "<td width='15'></td>";
+            }
+            smallScreenHtml += "</tr>";
+        }
+        smallScreenHtml += "</table>";
+        document.getElementById("smallScreen").innerHTML = smallScreenHtml;
+    }
+
+    //在小显示屏幕绘制方块（tetromino）
+    function drawTetromino2smallScreen(tetromino) {
+        //获取小显示屏幕
+        var smallScreen = document.getElementById("smallScreen");
+        //获取小显示屏幕中的所有行（即tr标记）
+        var trs = smallScreen.getElementsByTagName("tr");
+        for (var i = 0; i < trs.length; i++) {
+            //获取当前行中的所有单元格
+            var tds = trs[i].getElementsByTagName("td");
+            for (var j = 0; j < tds.length; j++) {
+                if (tetromino.data[i][j] == 1) {
+                    tds[j].style.backgroundColor = tetromino.color;
+                }
+                else {
+                    tds[j].style.backgroundColor = "white";
+                }
+            }
+        }
+    }
+
+    //将小显示屏幕上的方块移入显示屏幕中，并生成下一个方块显示在小显示屏幕上
+    function moveTetromino2screen() {
+        var tetromino = TetrominoFactory.getCurrentTetromino();
+        block_y = -1 * tetromino.getHeight();
+        block = new Block(block_x, block_y, tetromino);
+        drawTetromino2smallScreen(TetrominoFactory.createTetromino());
+
+    }
+
+    //显示屏幕刷新
+    function reshow() {
+        var style = "outerBorderTable";
+        style = "thinBorderTable";
+        document.getElementById("screenTable").className = style;
+
+        var screenDiv = document.getElementById("screen");
+        //获取显示屏幕中的所有行（即tr标记）
+        var trs = screenDiv.getElementsByTagName("tr");
+        for (var i = 0; i < trs.length; i++) {
+            //获取当前行中的所有单元格
+            var tds = trs[i].getElementsByTagName("td");
+            for (var j = 0; j < tds.length; j++) {
+                //如果是底部的方块
+                if (bottom[i][j] == 1) {
+                    tds[j].style.backgroundColor = bottomColor[i][j];
+                }
+                else {
+                    tds[j].style.backgroundColor = "white";
+                }
+
+                //下落的方块（当前方块的坐标位于4*4的矩形内部，且矩形内部对应位置的值是1）
+                if (i >= block.y && i < block.y + 4 && j >= block.x && j < block.x + 4
+                        && block.tetromino.data[i - block.y][j - block.x] == 1) {
+                    tds[j].style.backgroundColor = block.tetromino.color;
+                }
+            }
+        }
+    }
+
+    //旋转
+    function up() {
+        //缓存旧数据
+        var oldData = block.tetromino.data;
+        block.tetromino.data = block.tetromino.getNextStatus();
+        if (!isMoveable()) {
+            block.tetromino.data = oldData;
+        }
+        reshow();
+    }
+
+    //下移
+    function down() {
+        block.y++; //向下移动一格
+        if (!isMoveable()) {
+            block.y--;
+            accept();
+        }
+        reshow();
+    }
+
+    //快速下移
+    function quickDown() {
+        while (true) {
+            block.y++; //向下移动一格
+            if (!isMoveable()) {
+                block.y--;
+                accept();
+                break;
+            }
+            reshow();
+        }
+    }
+
+    //左移
+    function left() {
+        block.x--;
+        if (!isMoveable()) {
+            block.x++;
+        }
+        reshow();
+    }
+
+    //右移
+    function right() {
+        block.x++;
+        if (!isMoveable()) {
+            block.x--;
+        }
+        reshow();
+    }
+
+    //是否可以移动（即此次移动操作是否可行）
+    function isMoveable() {
+        var tetromino = block.tetromino;
+        for (var i = 0; i < tetromino.data.length; i++) {
+            for (var j = 0; j < tetromino.data[i].length; j++) {
+                //左侧出界
+                if (block.x + j < 0 && tetromino.data[i][j] == 1) {
+                    return false;
+                }
+                //右侧出界
+                if (block.x + j >= COLUMN && tetromino.data[i][j] == 1) {
+                    return false;
+                }
+                //到达底部了
+                if (block.y + tetromino.getHeight() > ROW) {
+                    return false;
+                }
+                //方块重合
+                if (block.y + i >= 0 && tetromino.data[i][j] == 1 && bottom[block.y + i][block.x + j] == 1) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
+    //接收一个block
+    function accept() {
+        var tetromino = block.tetromino;
+        for (var i = 0; i < tetromino.data.length; i++) {
+            for (var j = 0; j < tetromino.data[i].length; j++) {
+                if (tetromino.data[i][j] == 1) {
+                    if (block.y + i < 0) {
+                        gameOver();
+                        return;
+                    }
+                    bottom[block.y + i][block.x + j] = 1;
+                }
+            }
+        }
+
+        var line = disappear();
+
+        moveTetromino2screen();
+    }
+
+    //消去满行
+    function disappear() {
+        var line = 0; //此次消去行数
+        var r = block.y + block.tetromino.getHeight() - 1;
+        for (var i = 0; i < block.tetromino.getHeight(); i++, r--) {
+            //当前行是否可以消去，默认可消去
+            var disapperable = true;
+            for (var j = 0; j < bottom[r].length; j++) {
+                //如果有单元格为空，则当前行不可消去
+                if (bottom[r][j] == 0) {
+                    disapperable = false;
+                    break;
+                }
+            }
+            if (disapperable) {
+                line++; //更新消去行数
+                //消去当前满行
+                for (var k = r; k > 0; k--) {
+                    for (var j = 0; j < bottom[k].length; j++) {
+                        bottom[k][j] = bottom[k - 1][j];
+                        if (bottomColor[k - 1][j] != "GRAY") {
+                            bottomColor[k][j] = bottomColor[k - 1][j];
+                        }
+                    }
+                }
+                //首行全部为零
+                for (var j = 0; j < bottom[i].length; j++) {
+                    bottom[0][j] = 0;
+                }
+
+                r++; //消去一行时，继续判断当前行
+                reshow();
+            }
+        }
+
+        return line;
+    }
+
+    function gameOver() {
+        clearInterval(taskTimer);
+        clearInterval(updateTimer);
+
+        initBody();
+        if (confirm("Restart?")) {
+            start();
+        }
+    }
+
+    //更新显示区域的时间
+    function updateTime() {
+        var runTimeLabel = document.getElementById("runTime");
+        runTime++;
+        runTimeLabel.innerHTML = formatTime(runTime);
+    }
+
+    //格式化时间
+    function formatTime(time) {
+        var m = Math.floor(time / 60); //分钟
+        var s = time % 60; //秒数
+
+        var str = "";
+        if (m < 10) {
+            str = "0";
+        }
+        str += m + "：";
+        if (s < 10) {
+            str += "0";
+        }
+        str += s;
+        return str;
+    }
+
+    function keyEvent(e) {
+        if (navigator.appName == "Microsoft Internet Explorer") {
+            keyAction(event.keyCode);
+        } else {
+            keyAction(e.which);
+        }
+    }
+
+    function keyAction(key) {
+        switch (key) {
+            case 32: //向下快速移动
+                quickDown();
+                break;
+            case 37: //向左移动
+                left();
+                break;
+            case 38: //向上移动
+                up();
+                break;
+            case 39: //向右移动
+                right();
+                break;
+            case 40: //向下移动
+                down();
+                break;
+        }
+    }
+
+    //开始游戏
+    function start() {
+        changeButtonStatus();
+        if (gameStatus == "offDuty") {
+            gameStatus = "run";
+            moveTetromino2screen();
+        }
+        taskTimer = setInterval("down()", 800);
+        updateTimer = setInterval("updateTime()", 1000);
+    }
+
+    //暂停游戏
+    function pause() {
+        var btnpause = document.getElementById("btnpause");
+        if (btnpause.value == "Pause") {
+            btnpause.value = "Resume";
+            clearInterval(taskTimer);
+            clearInterval(updateTimer);
+        }
+        else {
+            btnpause.value = "Pause";
+            taskTimer = setInterval("down();", 800);
+            updateTimer = setInterval("updateTime()", 1000);
+        }
+    }
+
+    //结束游戏
+    function end() {
+        if (confirm("Sure to end?")) {
+            clearInterval(taskTimer);
+            clearInterval(updateTimer);
+            initBody();
+        }
+    }
+
+    //更改按钮状态
+    function initButtonStatus() {
+        document.getElementById("btnstart").disabled = false;
+        document.getElementById("btnpause").disabled = true;
+        document.getElementById("btnpause").value = "Pause";
+        document.getElementById("btnend").disabled = true;
+
+    }
+
+    //初始化按钮状态
+    function changeButtonStatus() {
+        document.getElementById("btnstart").disabled = true;
+        document.getElementById("btnpause").disabled = false;
+        document.getElementById("btnend").disabled = false;
+    }
+
+    initBody();
+    document.onkeydown = keyEvent;
+</script>
+</body>
+</html>
